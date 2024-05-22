@@ -24,6 +24,7 @@ var (
 )
 
 func main() {
+	fmt.Println("lalalalalaLALALALA")
 	log.SetHandler(logcli.New(os.Stdout))
 	cliapp := cli.NewApp()
 	cliapp.Name = "clickhouse-backup"

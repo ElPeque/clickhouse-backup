@@ -5,13 +5,14 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
-	"github.com/Altinity/clickhouse-backup/v2/pkg/config"
-	apexLog "github.com/apex/log"
 	"io"
 	"net/url"
 	"path"
 	"strings"
 	"time"
+
+	"github.com/Altinity/clickhouse-backup/v2/pkg/config"
+	apexLog "github.com/apex/log"
 
 	x "github.com/Altinity/clickhouse-backup/v2/pkg/storage/azblob"
 
@@ -230,6 +231,8 @@ func (a *AzureBlob) Walk(ctx context.Context, azPath string, recursive bool, pro
 }
 
 func (a *AzureBlob) WalkAbsolute(ctx context.Context, prefix string, recursive bool, process func(ctx context.Context, r RemoteFile) error) error {
+	fmt.Println("ASDFASDF", prefix)
+
 	a.logf("AZBLOB->WalkAbsolute %s", prefix)
 	if prefix == "" || prefix == "/" {
 		prefix = ""
@@ -244,26 +247,34 @@ func (a *AzureBlob) WalkAbsolute(ctx context.Context, prefix string, recursive b
 	if !recursive {
 		delimiter = "/"
 	}
+	fmt.Println("OMFG", 1)
 	for mrk.NotDone() {
+		fmt.Println("OMFG", 2)
 		if !recursive {
+			fmt.Println("OMFG", 3)
 			r, err := a.Container.ListBlobsHierarchySegment(ctx, mrk, delimiter, opt)
 			if err != nil {
 				return err
 			}
+			fmt.Println("OMFG", 4)
 			for _, p := range r.Segment.BlobPrefixes {
+				fmt.Println("OMFG", 41, p.Name, strings.TrimPrefix(p.Name, prefix))
 				if err := process(ctx, &azureBlobFile{
 					name: strings.TrimPrefix(p.Name, prefix),
 				}); err != nil {
 					return err
 				}
 			}
+			fmt.Println("OMFG", 5)
 			for _, blob := range r.Segment.BlobItems {
+				fmt.Println("OMFG", 6)
 				var size int64
 				if blob.Properties.ContentLength != nil {
 					size = *blob.Properties.ContentLength
 				} else {
 					size = 0
 				}
+				fmt.Println("XXX", blob.Name)
 				if err := process(ctx, &azureBlobFile{
 					name:         strings.TrimPrefix(blob.Name, prefix),
 					size:         size,
@@ -274,11 +285,16 @@ func (a *AzureBlob) WalkAbsolute(ctx context.Context, prefix string, recursive b
 			}
 			mrk = r.NextMarker
 		} else {
+			fmt.Println("OMFG", 7)
+
 			r, err := a.Container.ListBlobsFlatSegment(ctx, mrk, opt)
 			if err != nil {
 				return err
 			}
+			fmt.Println("OMFG", 8)
+
 			for _, blob := range r.Segment.BlobItems {
+				fmt.Println("YYY", blob.Name)
 				var size int64
 				if blob.Properties.ContentLength != nil {
 					size = *blob.Properties.ContentLength
@@ -296,6 +312,8 @@ func (a *AzureBlob) WalkAbsolute(ctx context.Context, prefix string, recursive b
 			mrk = r.NextMarker
 		}
 	}
+	fmt.Println("DONE!")
+
 	return nil
 }
 
